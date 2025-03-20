@@ -1,0 +1,84 @@
+{% set name = "vsg" %}
+{% set version = "3.30.0" %}
+
+package:
+  name: {{ name|lower }}
+  version: {{ version }}
+
+source:
+  url: https://github.com/jeremiah-c-leary/vhdl-style-guide/archive/refs/tags/{{ version }}.tar.gz
+  sha256: cd394fa6feebe7aa704a41aed9c743baf701d60807f73d191717dcfa188d240c
+
+build:
+  number: 1
+  noarch: python
+  skip: True  # [py<38 or s390x]
+  script:
+    # Create a VERSION file with the correct version
+    # because setuptools-git-versioning will not detect
+    # the version from the GitHub archive (not a repository,
+    # there is no tag).
+    - echo "{{ version }}" > VERSION
+    # Patch pyproject to use the dynamic version from the
+    # VERSION file rather than a git tag
+    - sed -i 's/template = "{tag}"/version_file = "VERSION"/' pyproject.toml
+    - python -m pip install . -vv --no-deps --no-build-isolation
+  entry_points:
+    - vsg = vsg.__main__:main
+
+requirements:
+  host:
+    - python
+    - setuptools
+    - setuptools-git-versioning
+    - wheel
+    - pip
+  run:
+    - python
+    - pyyaml >=5.1
+
+test:
+  imports:
+    - vsg
+  source_files:
+    - bin/
+    - docs/
+    - vsg/styles/*.yaml
+    - vsg/rules/ranges/preamble_doc.rst
+    - vsg/rules/block_comment/preamble_doc.rst
+    - vsg/rules/length/preamble_doc.rst
+    - vsg/rules/procedure/preamble_doc.rst
+    - vsg/rules/procedure_call/preamble_doc.rst
+    - vsg/rules/when/preamble_doc.rst
+    - vsg/vhdlFile/indent/indent_config.yaml
+    - tests/
+    - pyproject.toml
+  requires:
+    - pip
+    - pytest
+    - pytest-cov
+    - pytest-html
+    - pytest-xdist
+  commands:
+    - pip check
+    - vsg --help
+    # Verify correct version of the CLI
+    - vsg --version | grep "{{ version }}"
+    # Verify correct version of the module at runtime
+    - python -c "from importlib.metadata import version; assert(version('{{ name }}')=='{{ version }}')"
+    - pytest --no-cov
+
+about:
+  summary: Coding style enforcement for VHDL
+  license: GPL-3.0-only
+  license_file: LICENSE
+  license_family: GPL
+  home: https://github.com/jeremiah-c-leary/vhdl-style-guide
+  description: |
+    Coding style enforcement for VHDL
+  dev_url: https://github.com/jeremiah-c-leary/vhdl-style-guide
+  doc_url: https://vhdl-style-guide.readthedocs.io/en/stable/
+
+extra:
+  recipe-maintainers:
+    - blmaier
