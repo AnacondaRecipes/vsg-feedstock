@@ -26,6 +26,9 @@ build:
     - vsg = vsg.__main__:main
 
 requirements:
+  build:
+    - patch       # [not win]
+    - m2-patch    # [win]
   host:
     - python
     - setuptools
