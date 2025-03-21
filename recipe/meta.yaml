@@ -8,6 +8,8 @@ package:
 source:
   url: https://github.com/jeremiah-c-leary/vhdl-style-guide/archive/refs/tags/{{ version }}.tar.gz
   sha256: cd394fa6feebe7aa704a41aed9c743baf701d60807f73d191717dcfa188d240c
+  patches:
+    - patches/0001-version-patch.patch
 
 build:
   number: 0
@@ -18,10 +20,7 @@ build:
     # because setuptools-git-versioning will not detect
     # the version from the GitHub archive (not a repository,
     # there is no tag).
-    - echo "{{ version }}" > VERSION
-    # Patch pyproject to use the dynamic version from the
-    # VERSION file rather than a git tag
-    - sed -i 's/template = "{tag}"/version_file = "VERSION"/' pyproject.toml
+    - echo {{ version }} > VERSION
     - python -m pip install . -vv --no-deps --no-build-isolation
   entry_points:
     - vsg = vsg.__main__:main
@@ -63,7 +62,8 @@ test:
     - pip check
     - vsg --help
     # Verify correct version of the CLI
-    - vsg --version | grep "{{ version }}"
+    - vsg --version | grep "{{ version }}"   # [not win]
+    - vsg --version | findstr {{ version }}  # [win]
     # Verify correct version of the module at runtime
     - python -c "from importlib.metadata import version; assert(version('{{ name }}')=='{{ version }}')"
     - pytest --no-cov
